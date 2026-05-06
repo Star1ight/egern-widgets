@@ -1,0 +1,903 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Egern Widget Preview</title>
+    <style>
+      :root {
+        --page-bg: linear-gradient(180deg, #e8f0ff 0%, #f7faff 42%, #eef3ff 100%);
+        --page-ink: #18274f;
+        --page-muted: #5f6f9f;
+        --card-top: #2a3562;
+        --card-bottom: #1f274a;
+        --card-border: rgba(255, 255, 255, 0.18);
+        --card-shadow: 0 22px 50px rgba(45, 62, 112, 0.24);
+        --text-primary: #f8fbff;
+        --text-secondary: #d7dffc;
+        --text-muted: #a6b2da;
+        --text-faint: #7d8abb;
+        --accent: #18d7ff;
+        --accent-soft: rgba(24, 215, 255, 0.16);
+        --success: #17b889;
+        --track: rgba(255, 255, 255, 0.14);
+        --divider: rgba(255, 255, 255, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          radial-gradient(circle at top left, rgba(90, 132, 255, 0.18), transparent 30%),
+          radial-gradient(circle at bottom right, rgba(24, 215, 255, 0.14), transparent 22%),
+          var(--page-bg);
+        color: var(--page-ink);
+        font-family: Inter, -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", sans-serif;
+      }
+
+      .page {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 44px 24px 64px;
+      }
+
+      .page-header {
+        margin-bottom: 28px;
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        color: #4f63a2;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(28px, 4vw, 38px);
+        line-height: 1.05;
+      }
+
+      .subtitle {
+        margin: 10px 0 0;
+        max-width: 760px;
+        color: var(--page-muted);
+        font-size: 15px;
+        line-height: 1.65;
+      }
+
+      .layout {
+        display: grid;
+        gap: 28px;
+      }
+
+      .section-card {
+        background: rgba(255, 255, 255, 0.58);
+        border: 1px solid rgba(138, 157, 214, 0.2);
+        border-radius: 24px;
+        padding: 22px;
+        backdrop-filter: blur(14px);
+      }
+
+      .section-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px 14px;
+        margin-bottom: 14px;
+      }
+
+      .section-head h2,
+      .section-head h3 {
+        margin: 0;
+        font-size: 20px;
+      }
+
+      .ssize {
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: rgba(95, 111, 159, 0.12);
+        color: #4f63a2;
+        font-family: Menlo, monospace;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .descr {
+        margin: 0;
+        color: var(--page-muted);
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      .grid-two {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 28px;
+        align-items: start;
+      }
+
+      .widget {
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(180deg, var(--card-top) 0%, var(--card-bottom) 100%);
+        border: 1px solid var(--card-border);
+        border-radius: 28px;
+        box-shadow: var(--card-shadow);
+        color: var(--text-primary);
+      }
+
+      .widget::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(circle at top left, rgba(255, 255, 255, 0.08), transparent 28%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 30%);
+        pointer-events: none;
+      }
+
+      .w-small {
+        width: 158px;
+        height: 158px;
+        padding: 12px;
+      }
+
+      .w-medium {
+        width: 338px;
+        height: 158px;
+        padding: 10px 12px;
+        display: grid;
+        align-content: start;
+      }
+
+      .w-large {
+        width: 338px;
+        height: 354px;
+        padding: 16px 16px 14px;
+      }
+
+      .mono {
+        font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .wh {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+      }
+
+      .icon-chat {
+        width: 18px;
+        height: 18px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        background: var(--success);
+        flex: none;
+        box-shadow: 0 0 0 4px rgba(23, 184, 137, 0.14);
+      }
+
+      .icon-chat svg {
+        width: 72%;
+        height: 72%;
+      }
+
+      .w-title {
+        min-width: 0;
+        color: var(--text-primary);
+        font-size: 13px;
+        font-weight: 800;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .w-tag {
+        padding: 4px 8px;
+        border-radius: 10px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-family: Menlo, monospace;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.03em;
+        flex: none;
+      }
+
+      .w-time {
+        margin-left: auto;
+        color: var(--text-muted);
+        font-family: Menlo, monospace;
+        font-size: 11px;
+        font-weight: 700;
+        flex: none;
+      }
+
+      .w-meta {
+        margin-top: 4px;
+        color: var(--text-faint);
+        font-family: Menlo, monospace;
+        font-size: 9px;
+        font-weight: 700;
+      }
+
+      .label-tiny,
+      .label-mid {
+        color: var(--text-faint);
+        font-family: Menlo, monospace;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+      }
+
+      .label-tiny {
+        font-size: 10px;
+      }
+
+      .label-mid {
+        font-size: 11px;
+      }
+
+      .num-hero-md,
+      .num-hero-lg,
+      .num-hero-sm,
+      .num-strong-lg {
+        color: var(--text-primary);
+        font-weight: 900;
+        line-height: 0.95;
+        letter-spacing: 0;
+      }
+
+      .num-hero-md {
+        font-size: clamp(38px, 6vw, 60px);
+      }
+
+      .num-hero-lg {
+        font-size: clamp(44px, 8vw, 72px);
+      }
+
+      .num-hero-sm {
+        font-size: 28px;
+      }
+
+      .num-strong-lg {
+        font-size: 26px;
+      }
+
+      .num-cyan {
+        color: var(--accent);
+      }
+
+      .num-sub {
+        color: var(--text-faint);
+        font-family: Menlo, monospace;
+        font-size: 10px;
+        font-weight: 700;
+      }
+
+      .w-progress {
+        margin-top: 8px;
+        height: 12px;
+        background: var(--track);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+
+      .w-progress-fill {
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #25d8ff 0%, #49c7ff 100%);
+        box-shadow: 0 0 18px rgba(24, 215, 255, 0.4);
+      }
+
+      .progress-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 6px;
+        color: var(--text-secondary);
+        font-family: Menlo, monospace;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .divider {
+        height: 1px;
+        background: var(--divider);
+        margin: 14px 0;
+      }
+
+      .hero-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        gap: 16px;
+        margin-top: 12px;
+      }
+
+      .hero-aside {
+        text-align: right;
+      }
+
+      .medium-body {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(210px, 0.9fr);
+        gap: 16px;
+        align-items: start;
+      }
+
+      .compact-hero {
+        margin-top: 4px;
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .compact-reset {
+        text-align: right;
+      }
+
+      .compact-hero .num-hero-md {
+        font-size: clamp(24px, 4vw, 32px);
+      }
+
+      .compact-reset .num-strong-lg {
+        font-size: 16px;
+      }
+
+      .compact-inline {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 6px;
+        margin-top: 6px;
+      }
+
+      .compact-inline strong {
+        color: var(--text-primary);
+        font-family: Menlo, monospace;
+        font-size: 20px;
+        font-weight: 900;
+      }
+
+      .compact-sep {
+        color: #596895;
+        margin: 0 2px;
+      }
+
+      .compact-kpis {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 4px;
+        color: var(--text-secondary);
+        font-family: Menlo, monospace;
+        font-size: 9px;
+        font-weight: 700;
+      }
+
+      .compact-mini-bars {
+        height: 18px;
+      }
+
+      .compact-footer {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 92px;
+        gap: 10px;
+        align-items: end;
+        margin-top: 6px;
+      }
+
+      .compact-footer-main {
+        display: grid;
+        gap: 3px;
+        min-width: 0;
+      }
+
+      .compact-footer-line {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 6px;
+        min-width: 0;
+      }
+
+      .compact-footer-line strong {
+        color: var(--text-primary);
+        font-family: Menlo, monospace;
+        font-size: 18px;
+        font-weight: 900;
+      }
+
+      .compact-footnote {
+        color: var(--text-muted);
+        font-family: Menlo, monospace;
+        font-size: 9px;
+        font-weight: 700;
+      }
+
+      .today-hero {
+        display: grid;
+        gap: 8px;
+      }
+
+      .today-value-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 8px;
+      }
+
+      .today-value-row strong {
+        font-size: 28px;
+      }
+
+      .today-note {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        color: var(--text-secondary);
+        font-family: Menlo, monospace;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .stat-stack {
+        display: grid;
+        gap: 8px;
+      }
+
+      .stat-chip {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .stat-chip span {
+        color: var(--text-muted);
+        font-family: Menlo, monospace;
+        font-size: 10px;
+        font-weight: 700;
+      }
+
+      .stat-chip strong {
+        color: var(--text-primary);
+        font-family: Menlo, monospace;
+        font-size: 15px;
+        font-weight: 800;
+      }
+
+      .mini-trend-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 14px;
+      }
+
+      .bars {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 4px;
+        align-items: end;
+      }
+
+      .bars-medium {
+        height: 44px;
+        margin-top: 8px;
+      }
+
+      .bars-large {
+        height: 78px;
+        margin-top: 10px;
+      }
+
+      .bar-shell {
+        height: 100%;
+        padding: 2px;
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.06);
+        display: flex;
+        align-items: end;
+      }
+
+      .bar {
+        width: 100%;
+        border-radius: 3px;
+        background: rgba(201, 214, 255, 0.34);
+      }
+
+      .bar-today {
+        background: linear-gradient(180deg, #4fe1ff 0%, #18d7ff 100%);
+        box-shadow: 0 0 10px rgba(24, 215, 255, 0.38);
+      }
+
+      .glance {
+        margin-top: 10px;
+        color: var(--text-muted);
+        font-family: Menlo, monospace;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .gdot {
+        margin: 0 6px;
+        color: #5d6b99;
+      }
+
+      .small-stack {
+        display: grid;
+        gap: 12px;
+        height: 100%;
+      }
+
+      .small-bottom {
+        margin-top: auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        gap: 10px;
+      }
+
+      .small-value {
+        font-size: 16px;
+        font-weight: 800;
+      }
+
+      .large-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .large-grid .metric {
+        padding-left: 12px;
+        border-left: 1px solid var(--divider);
+      }
+
+      .large-grid .metric:first-child {
+        padding-left: 0;
+        border-left: 0;
+      }
+
+      .metric strong {
+        display: block;
+        margin-top: 4px;
+        color: var(--text-primary);
+        font-family: Menlo, monospace;
+        font-size: 18px;
+        font-weight: 800;
+      }
+
+      .metric .num-sub {
+        display: block;
+        margin-top: 2px;
+      }
+
+      .large-summary {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 14px;
+      }
+
+      .summary-card {
+        display: grid;
+        gap: 8px;
+        padding: 16px 18px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.62);
+        border: 1px solid rgba(138, 157, 214, 0.18);
+      }
+
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 8px;
+      }
+
+      .summary-grid div {
+        padding: 12px;
+        border-radius: 14px;
+        background: rgba(95, 111, 159, 0.08);
+        color: var(--page-muted);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .summary-grid strong {
+        display: block;
+        margin-bottom: 4px;
+        color: var(--page-ink);
+      }
+
+      @media (max-width: 920px) {
+        .grid-two,
+        .medium-body,
+        .large-summary,
+        .summary-grid {
+          grid-template-columns: 1fr;
+        }
+
+      }
+
+      @media (max-width: 640px) {
+        .page {
+          padding: 28px 16px 48px;
+        }
+
+        .section-card {
+          padding: 18px;
+        }
+
+        .hero-row,
+        .today-note,
+        .progress-meta {
+          flex-direction: column;
+          align-items: start;
+        }
+
+        .hero-aside,
+        .w-time {
+          margin-left: 0;
+          text-align: left;
+        }
+
+        .w-tag {
+          order: 3;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header class="page-header">
+        <p class="eyebrow">Egern Widget Mockup</p>
+        <h1>三种尺寸完整设计</h1>
+        <p class="subtitle">这版按 <strong>iPhone 390×844</strong> 的 Widget family 做 1:1 预览。这里不是放大示意，而是直接按这组点值写死：small 158×158、medium 338×158、large 338×354。</p>
+      </header>
+
+      <div class="layout">
+        <section class="section-card">
+          <div class="section-head">
+            <h2>① 中号优化稿</h2>
+            <span class="ssize">systemMedium · 338 × 158</span>
+          </div>
+          <p class="descr">这版按 medium 的真实横向比例收回信息密度，不再纵向堆太多块。保留 hero、预算进度、今日 token、请求数、7 日趋势和累计 glance。</p>
+
+          <article class="widget w-medium">
+            <div class="wh">
+              <span class="icon-chat" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="#fff"><path d="M22.28 9.82a5.94 5.94 0 0 0-.51-4.91 6.05 6.05 0 0 0-6.51-2.9A6.07 6.07 0 0 0 4.99 4.16 5.98 5.98 0 0 0 1 7.13a6.05 6.05 0 0 0 .74 7.1 5.97 5.97 0 0 0 .51 4.91 6.06 6.06 0 0 0 6.52 2.9A5.99 5.99 0 0 0 13.26 24a6.05 6.05 0 0 0 5.77-4.2 6 6 0 0 0 4.01-2.9 6.05 6.05 0 0 0-.76-7.07Z"/></svg>
+              </span>
+              <span class="w-title">中转站监控</span>
+              <span class="w-tag">STD · 3 KEY</span>
+              <span class="w-time">14:30</span>
+            </div>
+
+            <div class="w-meta">Ciii Codex · $500 预算 · 2026-08-21</div>
+
+            <div class="compact-hero">
+              <div>
+                <div class="label-tiny">今日花费 / $500 限额</div>
+                <div class="num-hero-md mono">$168.92</div>
+              </div>
+              <div class="compact-reset">
+                <div class="label-tiny">重置</div>
+                <div class="num-strong-lg mono num-cyan">9h 30m</div>
+              </div>
+            </div>
+
+            <div class="w-progress" style="margin-top: 6px; height: 10px">
+              <div class="w-progress-fill" style="width: 33.8%"></div>
+            </div>
+            <div class="progress-meta" style="margin-top: 4px; font-size: 10px">
+              <span>33.8% 已用</span>
+              <span>剩余 <strong class="num-cyan">$331.08</strong></span>
+            </div>
+
+            <div class="divider" style="margin: 7px 0 5px"></div>
+
+            <div class="compact-footer">
+              <div class="compact-footer-main">
+                <div class="compact-footer-line">
+                  <span class="label-tiny">今日 token</span>
+                  <strong class="mono">1.89 亿</strong>
+                  <span class="num-sub">(189,120,750)</span>
+                  <span class="compact-sep">·</span>
+                  <strong class="mono" style="font-size: 16px;">1,539</strong>
+                  <span class="num-sub">请求</span>
+                </div>
+                <div class="compact-footnote">输入 14.6M <span class="gdot">·</span> 输出 1.05M <span class="gdot">·</span> 累计 31.19亿</div>
+              </div>
+              <div class="bars compact-mini-bars" aria-hidden="true">
+                <div class="bar-shell"><div class="bar" style="height: 34%"></div></div>
+                <div class="bar-shell"><div class="bar" style="height: 52%"></div></div>
+                <div class="bar-shell"><div class="bar" style="height: 41%"></div></div>
+                <div class="bar-shell"><div class="bar" style="height: 66%"></div></div>
+                <div class="bar-shell"><div class="bar" style="height: 89%"></div></div>
+                <div class="bar-shell"><div class="bar" style="height: 58%"></div></div>
+                <div class="bar-shell"><div class="bar bar-today" style="height: 46%"></div></div>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <div class="grid-two">
+          <section class="section-card">
+            <div class="section-head">
+              <h3>② 小号 systemSmall</h3>
+              <span class="ssize">158 × 158</span>
+            </div>
+            <p class="descr">小号继续聚焦 hero，不过底色也跟着提亮，让进度条和剩余额度不那么被压住。</p>
+
+            <article class="widget w-small">
+              <div class="small-stack">
+                <div class="wh">
+                  <span class="icon-chat" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="#fff"><path d="M22.28 9.82a5.94 5.94 0 0 0-.51-4.91 6.05 6.05 0 0 0-6.51-2.9A6.07 6.07 0 0 0 4.99 4.16 5.98 5.98 0 0 0 1 7.13a6.05 6.05 0 0 0 .74 7.1 5.97 5.97 0 0 0 .51 4.91 6.06 6.06 0 0 0 6.52 2.9A5.99 5.99 0 0 0 13.26 24a6.05 6.05 0 0 0 5.77-4.2 6 6 0 0 0 4.01-2.9 6.05 6.05 0 0 0-.76-7.07Z"/></svg>
+                  </span>
+                  <span class="w-title" style="font-size: 11px">中转站监控</span>
+                  <span class="w-time">14:30</span>
+                </div>
+
+                <div>
+                  <div class="label-tiny">今日 / $500</div>
+                  <div class="num-hero-sm mono" style="margin-top: 4px">$168.92</div>
+                </div>
+
+                <div>
+                  <div class="w-progress">
+                    <div class="w-progress-fill" style="width: 33.8%"></div>
+                  </div>
+                  <div class="progress-meta" style="font-size: 10px; margin-top: 5px">
+                    <span>33.8%</span>
+                    <span class="num-cyan">$331</span>
+                  </div>
+                </div>
+
+                <div class="divider" style="margin: 2px 0 0"></div>
+
+                <div class="small-bottom">
+                  <div>
+                    <div class="label-tiny">今日</div>
+                    <div class="small-value mono">1.89 亿</div>
+                  </div>
+                  <div style="text-align: right">
+                    <div class="label-tiny">重置</div>
+                    <div class="small-value mono num-cyan">9h30m</div>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </section>
+
+          <section class="section-card">
+            <div class="section-head">
+              <h3>③ 大号 systemLarge</h3>
+              <span class="ssize">338 × 354</span>
+            </div>
+            <p class="descr">大号延续参考图里的监控盘味道，不过整体色阶也一并提亮，字和分割线没那么闷。</p>
+
+            <article class="widget w-large">
+              <div class="wh">
+                <span class="icon-chat" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="#fff"><path d="M22.28 9.82a5.94 5.94 0 0 0-.51-4.91 6.05 6.05 0 0 0-6.51-2.9A6.07 6.07 0 0 0 4.99 4.16 5.98 5.98 0 0 0 1 7.13a6.05 6.05 0 0 0 .74 7.1 5.97 5.97 0 0 0 .51 4.91 6.06 6.06 0 0 0 6.52 2.9A5.99 5.99 0 0 0 13.26 24a6.05 6.05 0 0 0 5.77-4.2 6 6 0 0 0 4.01-2.9 6.05 6.05 0 0 0-.76-7.07Z"/></svg>
+                </span>
+                <span class="w-title">中转站监控</span>
+                <span class="w-tag">STD · 3 KEY</span>
+                <span class="w-time">14:30</span>
+              </div>
+
+              <div class="w-meta">Ciii Codex 限额订阅 · 到期 2026-08-21</div>
+
+              <div class="hero-row">
+                <div>
+                  <div class="label-tiny">今日花费 / $500 限额（账号级）</div>
+                  <div class="num-hero-lg mono" style="margin-top: 6px">$168.92</div>
+                </div>
+                <div class="hero-aside">
+                  <div class="label-tiny">重置倒计时</div>
+                  <div class="num-strong-lg mono num-cyan" style="margin-top: 6px">9h 30m</div>
+                </div>
+              </div>
+
+              <div class="w-progress">
+                <div class="w-progress-fill" style="width: 33.8%"></div>
+              </div>
+              <div class="progress-meta">
+                <span>33.8% 已用</span>
+                <span>剩余 <strong class="num-cyan">$331.08</strong></span>
+              </div>
+
+              <div class="divider"></div>
+
+              <div class="label-mid" style="margin-bottom: 8px">今日详情 · 1,539 请求</div>
+              <div class="large-grid">
+                <div class="metric">
+                  <span class="label-tiny">输入 token</span>
+                  <strong>14.6M</strong>
+                  <span class="num-sub">14,638,271</span>
+                </div>
+                <div class="metric">
+                  <span class="label-tiny">输出 token</span>
+                  <strong>1.05M</strong>
+                  <span class="num-sub">1,046,959</span>
+                </div>
+                <div class="metric">
+                  <span class="label-tiny">缓存命中</span>
+                  <strong class="num-cyan">91.7%</strong>
+                  <span class="num-sub">173.4M / 189M</span>
+                </div>
+              </div>
+
+              <div class="divider"></div>
+
+              <div class="mini-trend-head">
+                <span class="label-mid">7 日趋势</span>
+                <span class="label-mid">单位：token</span>
+              </div>
+              <div class="bars bars-large" aria-hidden="true">
+                <div class="bar-shell"><div class="bar" style="height: 34%"></div></div>
+                <div class="bar-shell"><div class="bar" style="height: 53%"></div></div>
+                <div class="bar-shell"><div class="bar" style="height: 39%"></div></div>
+                <div class="bar-shell"><div class="bar" style="height: 66%"></div></div>
+                <div class="bar-shell"><div class="bar" style="height: 82%"></div></div>
+                <div class="bar-shell"><div class="bar" style="height: 56%"></div></div>
+                <div class="bar-shell"><div class="bar bar-today" style="height: 44%"></div></div>
+              </div>
+
+              <div class="large-summary" style="margin-top: 14px">
+                <div>
+                  <div class="label-tiny">累计（自始）</div>
+                  <div class="mono" style="font-size: 18px; font-weight: 800; margin-top: 6px">31.19 亿 · $2,184.46</div>
+                  <div class="num-sub" style="margin-top: 4px">3,119,100,554 token · 23,560 请求</div>
+                </div>
+                <div style="padding-left: 14px; border-left: 1px solid var(--divider)">
+                  <div class="label-tiny">本周 / 本月</div>
+                  <div class="mono" style="font-size: 18px; font-weight: 800; margin-top: 6px">$1,450 · $4,579</div>
+                  <div class="num-sub" style="margin-top: 4px">USD 用量（订阅）</div>
+                </div>
+              </div>
+            </article>
+          </section>
+        </div>
+
+        <section class="summary-card">
+          <strong>这次调整的重点</strong>
+          <div class="summary-grid">
+            <div>
+              <strong>背景提亮</strong>
+              页面外层从纯深色改成了更轻一点的浅冷背景，卡片本体还是深色，但不再一整片压黑。
+            </div>
+            <div>
+              <strong>中号主次</strong>
+              把中号拆成主数字、剩余额度、今日总量、三条次级指标和趋势，读起来更顺。
+            </div>
+            <div>
+              <strong>亮青保留</strong>
+              关键高亮还是亮青色，主要用在进度、剩余额度、今日柱和倒计时上。
+            </div>
+            <div>
+              <strong>后续可改</strong>
+              如果这版方向对，我们下一步可以再继续把 `src/widget.js` 的实际布局往这个预览对齐。
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

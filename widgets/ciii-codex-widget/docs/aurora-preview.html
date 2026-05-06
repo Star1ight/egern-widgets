@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>React Style Widget Preview - All Sizes</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  :root {
+    --bg-zinc-800: #27272A;
+    --bg-zinc-900: #18181B;
+    --bg-zinc-950: #09090B;
+    --card-bg: rgba(255, 255, 255, 0.05);
+    --emerald-400: #34D399;
+    --indigo-600: #4F46E5;
+    --text-main: #F8FAFC;
+    --text-muted: #94A3B8;
+    --text-faint: #475569;
+  }
+  
+  body {
+    background: #000;
+    color: var(--text-main);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+    margin: 0;
+    min-height: 100vh;
+    gap: 40px;
+  }
+
+  .title-section {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .title {
+    color: #FFF;
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+  }
+
+  .preview-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+    justify-content: center;
+    align-items: flex-start;
+    max-width: 1200px;
+  }
+
+  .widget-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .size-label {
+    color: #555;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-family: Menlo, monospace;
+  }
+
+  .widget {
+    background: linear-gradient(135deg, var(--bg-zinc-800) 0%, var(--bg-zinc-900) 50%, var(--bg-zinc-950) 100%);
+    border-radius: 22px;
+    box-sizing: border-box;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.1);
+    display: flex;
+  }
+
+  .w-small { width: 158px; height: 158px; padding: 14px; flex-direction: column; justify-content: space-between; }
+  .w-medium { width: 338px; height: 158px; padding: 14px; gap: 12px; }
+  .w-large { width: 338px; height: 354px; padding: 16px; flex-direction: column; gap: 12px; }
+
+  /* Common Components */
+  .header-tag {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .icon-box {
+    background: var(--indigo-600);
+    border-radius: 6px;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.3);
+  }
+
+  .plan-name {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100px;
+  }
+
+  .hero-val {
+    font-size: 28px;
+    font-weight: 900;
+    font-family: Menlo, monospace;
+    color: #FFF;
+    letter-spacing: -1px;
+    line-height: 1;
+    margin-bottom: 2px;
+  }
+
+  .hero-label {
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--text-muted);
+  }
+
+  .prog-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: auto;
+  }
+
+  .prog-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    font-weight: 600;
+  }
+
+  .prog-labels .spend { color: var(--emerald-400); }
+  .prog-labels .limit { color: var(--text-faint); }
+
+  .prog-bar {
+    height: 5px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .prog-fill {
+    height: 100%;
+    width: 33.8%;
+    background: var(--emerald-400);
+    border-radius: 4px;
+    box-shadow: 0 0 8px rgba(52, 211, 153, 0.5);
+  }
+
+  .reset-timer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 3px;
+    font-size: 8px;
+    font-weight: 700;
+    color: #71717A;
+    margin-top: 2px;
+  }
+
+  /* Grid Cards */
+  .grid-row { display: flex; gap: 8px; flex: 1; min-width: 0; }
+  .grid-card {
+    flex: 1;
+    background: var(--card-bg);
+    border-radius: 14px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border: 1px solid rgba(255,255,255,0.03);
+    min-width: 0;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 4px;
+    min-width: 0;
+  }
+
+  .card-title {
+    font-size: 7.5px;
+    font-weight: 800;
+    color: #A1A1AA;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .card-val {
+    font-size: 13px;
+    font-weight: 900;
+    font-family: Menlo, monospace;
+    color: #FFF;
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+    white-space: nowrap;
+  }
+
+  .card-unit { font-size: 8px; font-weight: 700; color: #71717A; }
+  .card-subval {
+    font-size: 7.5px;
+    font-weight: 700;
+    font-family: Menlo, monospace;
+    color: #71717A;
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Model List */
+  .model-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .model-item:last-child {
+    border-bottom: none;
+  }
+  .model-name {
+    font-size: 10px;
+    font-weight: 700;
+    color: #E2E8F0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .model-cost {
+    font-size: 10px;
+    font-weight: 800;
+    font-family: Menlo, monospace;
+    color: var(--emerald-400);
+  }
+  .model-rank {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.1);
+    color: #FFF;
+    font-size: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+  }
+  .rank-1 { background: #F59E0B; }
+  .rank-2 { background: #94A3B8; }
+  .rank-3 { background: #B45309; }
+
+  svg { display: block; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<div class="title-section">
+  <div class="title">React-Inspired UI (All Sizes)</div>
+  <div style="color: #94A3B8; font-size: 14px;">Includes Top 3 Models in Large Widget</div>
+</div>
+
+<div class="preview-container">
+
+  <!-- SMALL WIDGET -->
+  <div class="widget-wrapper">
+    <div class="size-label">systemSmall</div>
+    <div class="widget w-small">
+      <div class="header-tag">
+        <div class="icon-box">
+          <img src="https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/openai.png" width="12" height="12" style="display: block; filter: brightness(0) invert(1);" />
+        </div>
+        <div class="plan-name">Ciii Codex监控</div>
+      </div>
+      <div style="margin-top: 8px; margin-bottom: auto;">
+        <div class="hero-val" style="font-size: 26px;">$314.92</div>
+        <div class="hero-label">剩余额度</div>
+      </div>
+      <div class="prog-wrapper">
+        <div class="prog-labels">
+          <span class="spend">今日消耗 $146.88</span>
+          <span class="limit">上限 $500</span>
+        </div>
+        <div class="prog-bar">
+          <div class="prog-fill"></div>
+        </div>
+        <div class="reset-timer">
+          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="3"><polyline points="1 4 1 10 7 10"></polyline><polyline points="23 20 23 14 17 14"></polyline><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path></svg>
+          <span id="countdown1">2h 15m 后重置</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MEDIUM WIDGET -->
+  <div class="widget-wrapper">
+    <div class="size-label">systemMedium</div>
+    <div class="w-medium widget">
+      <div class="left-col" style="flex: 0.85; display: flex; flex-direction: column; justify-content: space-between; min-width: 0;">
+        <div class="header-tag">
+          <div class="icon-box">
+            <img src="https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/openai.png" width="12" height="12" style="display: block; filter: brightness(0) invert(1);" />
+          </div>
+          <div class="plan-name">Ciii Codex监控</div>
+        </div>
+        <div style="margin-top: auto; margin-bottom: 8px;">
+          <div class="hero-val">$314.92</div>
+          <div class="hero-label">累计用量 31.34 亿</div>
+        </div>
+        <div class="prog-wrapper">
+          <div class="prog-labels">
+            <span class="spend">消耗 $146.88</span>
+            <span class="limit">上限 $500</span>
+          </div>
+          <div class="prog-bar">
+            <div class="prog-fill"></div>
+          </div>
+          <div class="reset-timer">
+            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="3"><polyline points="1 4 1 10 7 10"></polyline><polyline points="23 20 23 14 17 14"></polyline><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path></svg>
+            <span id="countdown_mid">2h 15m 后重置</span>
+          </div>
+        </div>
+      </div>
+      <div class="right-col" style="flex: 1.15; display: flex; flex-direction: column; gap: 8px; min-width: 0;">
+        <div class="grid-row">
+          <div class="grid-card">
+            <div class="card-header">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="3"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              <span class="card-title">TOKENS</span>
+            </div>
+            <div class="card-val">2.05 亿</div>
+            <div class="card-subval">205,007,245</div>
+          </div>
+          <div class="grid-card">
+            <div class="card-header">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="#A1A1AA" stroke="#A1A1AA" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+              <span class="card-title">请求数</span>
+            </div>
+            <div class="card-val">1,668</div>
+          </div>
+        </div>
+        <div class="grid-row">
+          <div class="grid-card">
+            <div class="card-header">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="#A1A1AA" stroke="#A1A1AA" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              <span class="card-title">平均响应</span>
+            </div>
+            <div class="card-val">15.1<span class="card-unit">s</span></div>
+          </div>
+          <div class="grid-card">
+            <div class="card-header">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="3"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              <span class="card-title">订阅到期</span>
+            </div>
+            <div class="card-val" style="font-size: 11px;">2026-08-21</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LARGE WIDGET -->
+  <div class="widget-wrapper">
+    <div class="size-label">systemLarge (Bento Pro)</div>
+    <div class="widget w-large" style="padding: 14px;">
+      
+      <!-- Top Row (Identical to Medium) -->
+      <div style="display: flex; flex: 1; gap: 12px; min-height: 150px;">
+        <div class="left-col" style="flex: 0.85; display: flex; flex-direction: column; justify-content: space-between; min-width: 0;">
+          <div class="header-tag">
+            <div class="icon-box">
+              <img src="https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/openai.png" width="12" height="12" style="display: block; filter: brightness(0) invert(1);" />
+            </div>
+            <div class="plan-name">Ciii Codex监控</div>
+          </div>
+          <div style="margin-top: auto; margin-bottom: 8px;">
+            <div class="hero-val" style="font-size: 28px;">$314.92</div>
+            <div class="hero-label">可用余额剩余</div>
+          </div>
+          <div class="prog-wrapper">
+            <div class="reset-timer" style="justify-content: flex-start;">
+              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#71717A" stroke-width="3"><polyline points="1 4 1 10 7 10"></polyline><polyline points="23 20 23 14 17 14"></polyline><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path></svg>
+              <span id="countdown2">2h 15m 后重置</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="right-col" style="flex: 1.15; display: flex; flex-direction: column; gap: 8px; min-width: 0;">
+          <div class="grid-row">
+            <div class="grid-card">
+              <div class="card-header">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="3"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                <span class="card-title">TOKENS</span>
+              </div>
+              <div class="card-val">2.05 亿</div>
+              <div class="card-subval">205,007,245</div>
+            </div>
+            <div class="grid-card">
+              <div class="card-header">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="#A1A1AA" stroke="#A1A1AA" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                <span class="card-title">请求数</span>
+              </div>
+              <div class="card-val">1,668</div>
+            </div>
+          </div>
+          <div class="grid-row">
+            <div class="grid-card">
+              <div class="card-header">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="#A1A1AA" stroke="#A1A1AA" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                <span class="card-title">平均响应</span>
+              </div>
+              <div class="card-val">15.1<span class="card-unit">s</span></div>
+            </div>
+            <div class="grid-card">
+              <div class="card-header">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#A1A1AA" stroke-width="3"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                <span class="card-title">订阅到期</span>
+              </div>
+              <div class="card-val" style="font-size: 11px;">2026-08-21</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Row (New Bento Features) -->
+      <div style="display: flex; flex: 1; gap: 12px; margin-top: 12px;">
+        
+        <!-- Bottom Left: Progress & History -->
+        <div style="flex: 1; background: var(--card-bg); border-radius: 16px; padding: 12px; border: 1px solid rgba(255,255,255,0.03); display: flex; flex-direction: column; justify-content: center;">
+          <div style="font-size: 10px; font-weight: 700; color: #A1A1AA; margin-bottom: 12px; display: flex; align-items: center; gap: 4px;">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"></path><path d="M18 20V4"></path><path d="M6 20v-4"></path></svg>
+            使用量趋势
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; margin-bottom: 6px;">
+            <span style="color: var(--emerald-400);">已用 $146.88</span>
+            <span style="color: #475569;">上限 $500</span>
+          </div>
+          <div style="height: 6px; background: rgba(0,0,0,0.4); border-radius: 3px; overflow: hidden; margin-bottom: 16px;">
+            <div style="height: 100%; width: 29.3%; background: var(--emerald-400); border-radius: 3px; box-shadow: 0 0 8px rgba(52, 211, 153, 0.4);"></div>
+          </div>
+          <div style="font-size: 11px; font-weight: 800; color: #FFF; margin-bottom: 2px;">31.34 亿</div>
+          <div style="font-size: 8px; font-weight: 600; color: #71717A;">全量历史总 Tokens</div>
+        </div>
+
+        <!-- Bottom Right: Top 3 Models -->
+        <div style="flex: 1; background: var(--card-bg); border-radius: 16px; padding: 12px; border: 1px solid rgba(255,255,255,0.03); display: flex; flex-direction: column; justify-content: center;">
+          <div style="font-size: 10px; font-weight: 700; color: #A1A1AA; margin-bottom: 8px; display: flex; align-items: center; gap: 4px;">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"></path><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            消耗 Top 3 (USD)
+          </div>
+          <div style="display: flex; flex-direction: column;">
+            <div class="model-item">
+              <div class="model-name"><div class="model-rank rank-1">1</div> gpt-5.5</div>
+              <div class="model-cost">$1490</div>
+            </div>
+            <div class="model-item">
+              <div class="model-name"><div class="model-rank rank-2">2</div> gpt-5.4</div>
+              <div class="model-cost">$667</div>
+            </div>
+            <div class="model-item">
+              <div class="model-name"><div class="model-rank rank-3">3</div> codex</div>
+              <div class="model-cost">$35</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function updateCountdown() {
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setHours(24, 0, 0, 0);
+    const diff = tomorrow - now;
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const text = `${h}h ${m}m 后重置`;
+    document.getElementById('countdown1').textContent = text;
+    document.getElementById('countdown2').textContent = text;
+    document.getElementById('countdown_mid').textContent = text;
+  }
+  updateCountdown();
+  setInterval(updateCountdown, 60000);
+</script>
+
+</body>
+</html>

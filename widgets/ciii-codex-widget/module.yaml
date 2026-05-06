@@ -1,0 +1,36 @@
+name: "Ciii Codex Widget"
+description: "Ciii Codex usage widget for Egern"
+author: "Star1ight"
+icon: "chart.bar.xaxis"
+
+env_schema:
+  API_KEY:
+    name: API Key
+    description: "One or more API keys. Separate multiple keys with commas."
+  BASE_URL:
+    name: Base URL
+    description: "API base URL."
+    default_value: "https://codex.ciii.club"
+  OPEN_URL:
+    name: Open URL
+    description: "Page to open when the widget is tapped."
+    default_value: "https://codex.ciii.club/usage"
+  TITLE:
+    name: Title
+    description: "Widget title."
+    default_value: "Ciii Codex监控"
+  REQUEST_TIMEOUT_MS:
+    name: Request Timeout
+    description: "Single request timeout in milliseconds. Keep this below the widget script timeout."
+    default_value: "3500"
+
+scriptings:
+  - generic:
+      name: "ciii-codex-widget-script"
+      script_url: "https://raw.githubusercontent.com/Star1ight/egern-widgets/main/widgets/ciii-codex-widget/src/widget.js"
+      timeout: 10
+      update_interval: 300
+
+widgets:
+  - name: "Ciii Codex监控"
+    script_name: "ciii-codex-widget-script"
