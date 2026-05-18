@@ -132,7 +132,7 @@ function buildResetRow(padding = [2, 0, 0, 0]) {
   ], padding);
 }
 
-function buildAccountFingerprint(data, planName, remaining, dailyLimit, expiresAt) {
+function buildAccountFingerprint(data, planName, dailyLimit, expiresAt) {
   const explicitId = firstPath(data, [
     'account.id',
     'accountId',
@@ -149,9 +149,51 @@ function buildAccountFingerprint(data, planName, remaining, dailyLimit, expiresA
   return [
     planName || '--',
     expiresAt || '--',
-    num(remaining).toFixed(6),
     num(dailyLimit).toFixed(6)
   ].join('|');
+}
+
+function mergeModelStats(target, modelStats) {
+  if (!Array.isArray(modelStats)) return;
+
+  for (const stat of modelStats) {
+    if (!stat.model || stat.cost === undefined) continue;
+    const currentCost = target.get(stat.model) || 0;
+    target.set(stat.model, Math.max(currentCost, num(stat.cost)));
+  }
+}
+
+function createAccountSnapshot(values) {
+  const modelStats = new Map();
+  mergeModelStats(modelStats, values.modelStats);
+
+  return {
+    ...values,
+    modelStats
+  };
+}
+
+function mergeAccountSnapshot(existing, values) {
+  existing.remaining = Math.min(existing.remaining, values.remaining);
+  existing.dailyLimit = Math.max(existing.dailyLimit, values.dailyLimit);
+  existing.dailyCost = Math.max(existing.dailyCost, values.dailyCost);
+  existing.todayTokens = Math.max(existing.todayTokens, values.todayTokens);
+  existing.totalTokens = Math.max(existing.totalTokens, values.totalTokens);
+  existing.requests = Math.max(existing.requests, values.requests);
+
+  if (values.duration > 0 && values.requests >= existing.durationRequests) {
+    existing.duration = values.duration;
+    existing.durationRequests = values.requests;
+  }
+
+  if (values.expiresAt) {
+    const nextExpires = new Date(values.expiresAt);
+    if (!existing.expiresAt || nextExpires < new Date(existing.expiresAt)) {
+      existing.expiresAt = values.expiresAt;
+    }
+  }
+
+  mergeModelStats(existing.modelStats, values.modelStats);
 }
 
 function getWidgetCacheKey(widgetFamily) {
@@ -576,9 +618,15 @@ export default async function(ctx) {
   }
 
   try {
+    const cacheBuster = Date.now();
     const fetchPromises = apiKeys.map(key => 
-      ctx.http.get(`${baseUrl}/v1/usage`, {
-        headers: { Authorization: `Bearer ${key}`, Accept: 'application/json' },
+      ctx.http.get(`${baseUrl}/v1/usage?_=${cacheBuster}`, {
+        headers: {
+          Authorization: `Bearer ${key}`,
+          Accept: 'application/json',
+          'Cache-Control': 'no-cache',
+          Pragma: 'no-cache'
+        },
         timeout: requestTimeoutMs,
         credentials: 'omit'
       })
@@ -593,13 +641,11 @@ export default async function(ctx) {
     let aggregatedDailyCost = 0;
     let aggregatedRequests = 0;
     
-    let aggregatedPlanNames = [];
     let minExpiresAt = null;
     let aggregatedAvgDurationMs = 0;
     let aggregatedDurationWeight = 0;
     let validKeysCount = 0;
-    let uniqueAccountsCount = 0;
-    const seenAccounts = new Set();
+    const accountSnapshots = new Map();
     const modelStatsMap = new Map();
     
     let hasValidData = false;
@@ -616,7 +662,7 @@ export default async function(ctx) {
           const planName = firstPath(data, ['planName'], '未命名订阅');
           const expRaw = firstPath(data, ['subscription.expires_at'], null);
           const remainingRaw = firstPath(data, ['remaining', 'quota.remaining', 'balance.remaining'], 0);
-          const totalTokens = firstPath(data, ['usage.total.total_tokens', 'total.total_tokens'], 0);
+          const totalTokens = firstPath(data, ['usage.total.total_tokens', 'total.total_tokens', 'usage.total_tokens'], 0);
           const dailyLimit = firstPath(data, ['subscription.daily_limit_usd'], 0);
           const dailyCost = firstPath(data, ['subscription.daily_usage_usd', 'usage.today.cost', 'usage.today.actual_cost'], 0);
           const reqs = num(firstPath(data, ['usage.today.requests'], 0));
@@ -624,42 +670,27 @@ export default async function(ctx) {
           const todayInput = firstPath(data, ['usage.today.input_tokens', 'today.input_tokens'], 0);
           const todayOutput = firstPath(data, ['usage.today.output_tokens', 'today.output_tokens'], 0);
           const todayTotal = firstPath(data, ['usage.today.total_tokens', 'today.total_tokens'], num(todayInput) + num(todayOutput));
-          const accountFingerprint = buildAccountFingerprint(data, planName, remainingRaw, dailyLimit, expRaw);
-
-          if (seenAccounts.has(accountFingerprint)) {
-            continue;
-          }
-          seenAccounts.add(accountFingerprint);
-          
-          uniqueAccountsCount++;
-          if (!aggregatedPlanNames.includes(planName)) aggregatedPlanNames.push(planName);
-
-          if (expRaw) {
-            const expDate = new Date(expRaw);
-            if (!minExpiresAt || expDate < minExpiresAt) minExpiresAt = expDate;
-          }
-
-          const durationWeight = reqs > 0 ? reqs : 1;
-          if (duration > 0) {
-            aggregatedAvgDurationMs += duration * durationWeight;
-            aggregatedDurationWeight += durationWeight;
-          }
-
-          aggregatedTodayTokens += num(todayTotal);
-          aggregatedTotalTokens += num(totalTokens);
-          aggregatedRemaining += num(remainingRaw);
-          aggregatedDailyLimit += num(dailyLimit);
-          aggregatedDailyCost += num(dailyCost);
-          aggregatedRequests += reqs;
-
+          const accountFingerprint = buildAccountFingerprint(data, planName, dailyLimit, expRaw);
           const modelStats = firstPath(data, ['model_stats'], []);
-          if (Array.isArray(modelStats)) {
-            for (const stat of modelStats) {
-              if (stat.model && stat.cost !== undefined) {
-                const currentCost = modelStatsMap.get(stat.model) || 0;
-                modelStatsMap.set(stat.model, currentCost + num(stat.cost));
-              }
-            }
+          const snapshotValues = {
+            planName,
+            expiresAt: expRaw,
+            remaining: num(remainingRaw),
+            dailyLimit: num(dailyLimit),
+            dailyCost: num(dailyCost),
+            todayTokens: num(todayTotal),
+            totalTokens: num(totalTokens),
+            requests: reqs,
+            duration,
+            durationRequests: reqs,
+            modelStats
+          };
+
+          const existingSnapshot = accountSnapshots.get(accountFingerprint);
+          if (existingSnapshot) {
+            mergeAccountSnapshot(existingSnapshot, snapshotValues);
+          } else {
+            accountSnapshots.set(accountFingerprint, createAccountSnapshot(snapshotValues));
           }
         } else {
           errorMessage = `HTTP 错误 ${resp.status}`;
@@ -671,6 +702,31 @@ export default async function(ctx) {
 
     if (!hasValidData) {
       return readCachedWidget(ctx) || buildErrorWidget(defaultTitle, errorMessage || '未获取到有效数据', openUrl);
+    }
+
+    for (const snapshot of accountSnapshots.values()) {
+      if (snapshot.expiresAt) {
+        const expDate = new Date(snapshot.expiresAt);
+        if (!minExpiresAt || expDate < minExpiresAt) minExpiresAt = expDate;
+      }
+
+      const durationWeight = snapshot.requests > 0 ? snapshot.requests : 1;
+      if (snapshot.duration > 0) {
+        aggregatedAvgDurationMs += snapshot.duration * durationWeight;
+        aggregatedDurationWeight += durationWeight;
+      }
+
+      aggregatedTodayTokens += snapshot.todayTokens;
+      aggregatedTotalTokens += snapshot.totalTokens;
+      aggregatedRemaining += snapshot.remaining;
+      aggregatedDailyLimit += snapshot.dailyLimit;
+      aggregatedDailyCost += snapshot.dailyCost;
+      aggregatedRequests += snapshot.requests;
+
+      for (const [model, cost] of snapshot.modelStats.entries()) {
+        const currentCost = modelStatsMap.get(model) || 0;
+        modelStatsMap.set(model, currentCost + cost);
+      }
     }
 
     const finalPlanName = validKeysCount > 1 ? `${defaultTitle} (${validKeysCount} Key)` : defaultTitle;
