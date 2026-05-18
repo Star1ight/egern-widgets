@@ -152,7 +152,7 @@ test('large widget output stays within documented Egern widget schema', async ()
   });
 });
 
-test('medium widget deduplicates account-level fields across multiple keys', async () => {
+test('medium widget deduplicates subscription fields while summing per-key usage', async () => {
   const output = await widget(makeCtx('systemMedium', {
     alpha: makeUsageResponse({
       remaining: 211,
@@ -202,42 +202,39 @@ test('medium widget deduplicates account-level fields across multiple keys', asy
   assert.match(text, /\$588\.00/u);
   assert.match(text, /今日消耗 \$200\.00/u);
   assert.match(text, /上限 \$1500\.00/u);
-  assert.match(text, /累计用量 4\.0K/u);
-  assert.match(text, /TOKENS 4\.0K 4,000/u);
-  assert.match(text, /请求数 8/u);
+  assert.match(text, /累计用量 5\.0K/u);
+  assert.match(text, /TOKENS 5\.0K 5,000/u);
+  assert.match(text, /请求数 10/u);
   assert.doesNotMatch(text, /\$799\.00/u);
   assert.doesNotMatch(text, /今日消耗 \$350\.00/u);
   assert.doesNotMatch(text, /上限 \$2100\.00/u);
-  assert.doesNotMatch(text, /累计用量 5\.0K/u);
-  assert.doesNotMatch(text, /TOKENS 5\.0K 5,000/u);
-  assert.doesNotMatch(text, /请求数 10/u);
 });
 
-test('medium widget uses freshest duplicate account usage without double-counting quota', async () => {
+test('medium widget sums per-key totals under one shared subscription', async () => {
   const output = await widget(makeCtx('systemMedium', {
     alpha: makeUsageResponse({
-      remaining: 211,
+      remaining: 337,
       usage: {
         average_duration_ms: 120,
         today: { total_tokens: 1000, requests: 2, cost: 999 },
-        total: { total_tokens: 1000 }
+        total: { total_tokens: 4_300_000_000 }
       },
       subscription: {
         daily_limit_usd: 600,
-        daily_usage_usd: 150,
+        daily_usage_usd: 162,
         expires_at: '2026-08-21T00:00:00.000Z'
       }
     }),
     beta: makeUsageResponse({
-      remaining: 205,
+      remaining: 337,
       usage: {
         average_duration_ms: 160,
         today: { total_tokens: 2400, requests: 5, cost: 999 },
-        total: { total_tokens: 2400 }
+        total: { total_tokens: 1_800_000_000 }
       },
       subscription: {
         daily_limit_usd: 600,
-        daily_usage_usd: 170,
+        daily_usage_usd: 162,
         expires_at: '2026-08-21T00:00:00.000Z'
       }
     })
@@ -245,18 +242,17 @@ test('medium widget uses freshest duplicate account usage without double-countin
 
   const text = collectText(output).join(' ');
 
-  assert.match(text, /\$205\.00/u);
-  assert.match(text, /今日消耗 \$170\.00/u);
+  assert.match(text, /\$337\.00/u);
+  assert.match(text, /今日消耗 \$162\.00/u);
   assert.match(text, /上限 \$600\.00/u);
-  assert.match(text, /累计用量 2\.4K/u);
-  assert.match(text, /TOKENS 2\.4K 2,400/u);
-  assert.match(text, /请求数 5/u);
-  assert.doesNotMatch(text, /累计用量 1\.0K/u);
-  assert.doesNotMatch(text, /请求数 7/u);
+  assert.match(text, /累计用量 61\.00 亿/u);
+  assert.match(text, /TOKENS 3\.4K 3,400/u);
+  assert.match(text, /请求数 7/u);
+  assert.doesNotMatch(text, /累计用量 43\.00 亿/u);
   assert.doesNotMatch(text, /上限 \$1200\.00/u);
 });
 
-test('large widget keeps top models and deduplicates mirrored model_stats across keys', async () => {
+test('large widget sums top models across unique keys', async () => {
   const output = await widget(makeCtx('systemLarge', {
     alpha: makeUsageResponse({
       model_stats: [
@@ -296,12 +292,11 @@ test('large widget keeps top models and deduplicates mirrored model_stats across
 
   assert.match(text, /消耗 Top 3 \(USD\)/u);
   assert.match(text, /gpt-5\.5/u);
-  assert.match(text, /\$125/u);
+  assert.match(text, /\$225/u);
   assert.match(text, /gpt-5\.4/u);
-  assert.match(text, /\$55/u);
+  assert.match(text, /\$105/u);
   assert.match(text, /codex/u);
-  assert.match(text, /\$11/u);
-  assert.doesNotMatch(text, /\$225/u);
+  assert.match(text, /\$21/u);
 });
 
 test('preview html exists for side-by-side visual inspection', async () => {

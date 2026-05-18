@@ -132,7 +132,7 @@ function buildResetRow(padding = [2, 0, 0, 0]) {
   ], padding);
 }
 
-function buildAccountFingerprint(data, planName, dailyLimit, expiresAt) {
+function buildSubscriptionFingerprint(data, values) {
   const explicitId = firstPath(data, [
     'account.id',
     'accountId',
@@ -147,29 +147,31 @@ function buildAccountFingerprint(data, planName, dailyLimit, expiresAt) {
   if (explicitId) return String(explicitId);
 
   return [
-    planName || '--',
-    expiresAt || '--',
-    num(dailyLimit).toFixed(6)
+    values.planName || '--',
+    values.expiresAt || '--',
+    values.dailyLimit.toFixed(6),
+    values.dailyCost.toFixed(6),
+    values.remaining.toFixed(6)
   ].join('|');
 }
 
-function mergeModelStats(target, modelStats) {
+function addModelStats(target, modelStats) {
   if (!Array.isArray(modelStats)) return;
 
   for (const stat of modelStats) {
     if (!stat.model || stat.cost === undefined) continue;
     const currentCost = target.get(stat.model) || 0;
-    target.set(stat.model, Math.max(currentCost, num(stat.cost)));
+    target.set(stat.model, currentCost + num(stat.cost));
   }
 }
 
 function createAccountSnapshot(values) {
-  const modelStats = new Map();
-  mergeModelStats(modelStats, values.modelStats);
-
   return {
-    ...values,
-    modelStats
+    planName: values.planName,
+    expiresAt: values.expiresAt,
+    remaining: values.remaining,
+    dailyLimit: values.dailyLimit,
+    dailyCost: values.dailyCost
   };
 }
 
@@ -177,14 +179,6 @@ function mergeAccountSnapshot(existing, values) {
   existing.remaining = Math.min(existing.remaining, values.remaining);
   existing.dailyLimit = Math.max(existing.dailyLimit, values.dailyLimit);
   existing.dailyCost = Math.max(existing.dailyCost, values.dailyCost);
-  existing.todayTokens = Math.max(existing.todayTokens, values.todayTokens);
-  existing.totalTokens = Math.max(existing.totalTokens, values.totalTokens);
-  existing.requests = Math.max(existing.requests, values.requests);
-
-  if (values.duration > 0 && values.requests >= existing.durationRequests) {
-    existing.duration = values.duration;
-    existing.durationRequests = values.requests;
-  }
 
   if (values.expiresAt) {
     const nextExpires = new Date(values.expiresAt);
@@ -192,8 +186,6 @@ function mergeAccountSnapshot(existing, values) {
       existing.expiresAt = values.expiresAt;
     }
   }
-
-  mergeModelStats(existing.modelStats, values.modelStats);
 }
 
 function getWidgetCacheKey(widgetFamily) {
@@ -611,7 +603,7 @@ export default async function(ctx) {
   const rawApiKeys = ctx.env.API_KEY || '';
   const requestTimeoutMs = Math.max(1000, Math.min(num(ctx.env.REQUEST_TIMEOUT_MS, 3500), 9000));
   
-  const apiKeys = rawApiKeys.split(',').map(k => k.trim()).filter(Boolean);
+  const apiKeys = Array.from(new Set(rawApiKeys.split(',').map(k => k.trim()).filter(Boolean)));
 
   if (apiKeys.length === 0) {
     return buildErrorWidget(defaultTitle, '请配置 API_KEY 环境变数。如有多个，请用逗号隔开。', openUrl);
@@ -670,7 +662,6 @@ export default async function(ctx) {
           const todayInput = firstPath(data, ['usage.today.input_tokens', 'today.input_tokens'], 0);
           const todayOutput = firstPath(data, ['usage.today.output_tokens', 'today.output_tokens'], 0);
           const todayTotal = firstPath(data, ['usage.today.total_tokens', 'today.total_tokens'], num(todayInput) + num(todayOutput));
-          const accountFingerprint = buildAccountFingerprint(data, planName, dailyLimit, expRaw);
           const modelStats = firstPath(data, ['model_stats'], []);
           const snapshotValues = {
             planName,
@@ -685,6 +676,7 @@ export default async function(ctx) {
             durationRequests: reqs,
             modelStats
           };
+          const accountFingerprint = buildSubscriptionFingerprint(data, snapshotValues);
 
           const existingSnapshot = accountSnapshots.get(accountFingerprint);
           if (existingSnapshot) {
@@ -692,6 +684,17 @@ export default async function(ctx) {
           } else {
             accountSnapshots.set(accountFingerprint, createAccountSnapshot(snapshotValues));
           }
+
+          const durationWeight = reqs > 0 ? reqs : 1;
+          if (duration > 0) {
+            aggregatedAvgDurationMs += duration * durationWeight;
+            aggregatedDurationWeight += durationWeight;
+          }
+
+          aggregatedTodayTokens += num(todayTotal);
+          aggregatedTotalTokens += num(totalTokens);
+          aggregatedRequests += reqs;
+          addModelStats(modelStatsMap, modelStats);
         } else {
           errorMessage = `HTTP 错误 ${resp.status}`;
         }
@@ -710,23 +713,9 @@ export default async function(ctx) {
         if (!minExpiresAt || expDate < minExpiresAt) minExpiresAt = expDate;
       }
 
-      const durationWeight = snapshot.requests > 0 ? snapshot.requests : 1;
-      if (snapshot.duration > 0) {
-        aggregatedAvgDurationMs += snapshot.duration * durationWeight;
-        aggregatedDurationWeight += durationWeight;
-      }
-
-      aggregatedTodayTokens += snapshot.todayTokens;
-      aggregatedTotalTokens += snapshot.totalTokens;
       aggregatedRemaining += snapshot.remaining;
       aggregatedDailyLimit += snapshot.dailyLimit;
       aggregatedDailyCost += snapshot.dailyCost;
-      aggregatedRequests += snapshot.requests;
-
-      for (const [model, cost] of snapshot.modelStats.entries()) {
-        const currentCost = modelStatsMap.get(model) || 0;
-        modelStatsMap.set(model, currentCost + cost);
-      }
     }
 
     const finalPlanName = validKeysCount > 1 ? `${defaultTitle} (${validKeysCount} Key)` : defaultTitle;
